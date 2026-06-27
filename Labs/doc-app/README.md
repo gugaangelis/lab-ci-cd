@@ -1,5 +1,5 @@
 
-Como já foi provisionada a infraestrutura pra suportar a aplicação (Cluster ECS, NLB e SG), agora será necessário criar o workflow para realizar o deploy da aplicação de forma automatizada`Continuous Integration`, `Continuous Delivery` e `Continuous Deployment`
+Como já foi provisionado a infraestrutura pra suportar a aplicação (Cluster ECS, NLB e SG), agora será necessário criar o workflow para realizar o deploy da aplicação de forma automatizada`Continuous Integration`, `Continuous Delivery` e `Continuous Deployment`
 
 ![](./img/lab-cicd.png)
 
