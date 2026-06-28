@@ -1,25 +1,15 @@
-data "aws_lb_target_group" "this" {
-  name = "app-prod-tg"
-}
-
-data "aws_security_groups" "this" {
-  filter {
-    name   = "tag:Name"
-    values = ["app-prod-sg"]
-  }
-}
-
-data "aws_lb" "this" {
-  name = var.lb_name
+data "aws_ecs_task_definition" "this" {
+  task_definition = "ci-cd-app"
 }
 
 resource "aws_ecs_service" "this" {
   name                          = "app-service"
-  task_definition               = "ci-cd-app"
   cluster                       = var.cluster_name
+  task_definition               = data.aws_ecs_task_definition.this.arn
   desired_count                 = var.desired_count
   launch_type                   = "FARGATE"
   availability_zone_rebalancing = "ENABLED"
+
   network_configuration {
     subnets          = var.subnets_id
     security_groups  = data.aws_security_groups.this.ids
@@ -33,12 +23,12 @@ resource "aws_ecs_service" "this" {
   }
 
   lifecycle {
-    ignore_changes = [task_definition]
+    ignore_changes = [
+      task_definition
+    ]
   }
 
-}
-
-resource "aws_cloudwatch_log_group" "this" {
-  name              = "/ecs/ci-cd-app"
-  retention_in_days = 7
+  depends_on = [
+    aws_cloudwatch_log_group.this
+  ]
 }

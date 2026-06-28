@@ -46,7 +46,7 @@ jobs:
           echo "Image TAG" ${{ steps.set_tag.outputs.image_tag }}
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -90,7 +90,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: app
 
     steps:
       - name: Download do Repositório
@@ -107,7 +106,6 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Update log region in task definition
-        working-directory: ${{ github.workspace }}
         run: |
           jq --arg region "${{ vars.AWS_REGION }}" \
             '(.containerDefinitions[].logConfiguration.options["awslogs-region"]) = $region' \
@@ -119,10 +117,17 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ./app/deploy/ecs-task-definition.json
+
           container-name: ${{ env.IMAGE_NAME }}
           image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.Build.outputs.image_tag }}
-          taskRoleArn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/LabRole
-          executionRoleArn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/LabRole
+
+      - name: Deploy App in Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
 
       - name: Terraform | Setup
         uses: hashicorp/setup-terraform@v3
@@ -137,7 +142,7 @@ jobs:
                 key      = \"app-${{ env.ENVIRONMENT }}.tfstate\"
                 region   = \"${{ vars.AWS_REGION }}\"
               }
-            }" >> provider.tf
+            }" > provider.tf
             cat provider.tf
         working-directory: ./app/deploy
 
@@ -160,13 +165,5 @@ jobs:
 
       - name: Terraform Creating and Update
         if: env.DESTROY != 'true'
-        run: terraform apply -auto-approve -input=false
+        run: terraform apply tfplan.binary
         working-directory: ./app/deploy
-
-      - name: Deploy App in Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
