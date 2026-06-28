@@ -121,14 +121,6 @@ jobs:
           container-name: ${{ env.IMAGE_NAME }}
           image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.Build.outputs.image_tag }}
 
-      - name: Deploy App in Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
-
       - name: Terraform | Setup
         uses: hashicorp/setup-terraform@v3
         with:
@@ -167,3 +159,11 @@ jobs:
         if: env.DESTROY != 'true'
         run: terraform apply tfplan.binary
         working-directory: ./app/deploy
+
+      - name: Deploy App in Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
