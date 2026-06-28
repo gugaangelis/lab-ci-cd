@@ -20,3 +20,15 @@ variable "lb_name" {
   type        = string
   default     = "app-prod-nlb"
 }
+
+variable "sg_name" {
+  description = "Security Group Name"
+  type        = string
+  default     = "app-prod-sg"
+}
+
+variable "tg_name" {
+  description = "Target Group Name"
+  type        = string
+  default     = "app-prod-tg"
+}
